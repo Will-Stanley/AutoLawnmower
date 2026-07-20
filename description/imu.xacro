@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="imu">
+    <joint name="imu_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="imu"/>
+        <origin xyz="${robot['imu']['chip']['offset'][0]} ${robot['imu']['chip']['offset'][1]} ${robot['imu']['chip']['offset'][2]}" rpy="0 0 0"/>
+    </joint>
+
+    <link name="imu">
+    </link>
+
+</robot>

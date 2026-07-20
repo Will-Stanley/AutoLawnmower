@@ -1,0 +1,21 @@
+repositories:
+  vesc:
+    type: git
+    url: https://github.com/sbgisen/vesc.git
+    version: jazzy-devel
+  micro_ros_agent:
+    type: git
+    url: https://github.com/micro-ROS/micro-ROS-Agent
+    version: jazzy
+  ublox_f9p:
+    type: git
+    url: https://github.com/jkaflik/ublox_f9p
+    version: main
+  ntrip_client:
+    type: git
+    url: https://github.com/LORD-MicroStrain/ntrip_client
+    version: ros2
+  fields2cover:
+    type: git
+    url: https://github.com/Fields2Cover/Fields2Cover.git
+    version: 0ce7fcce82f3f79f773699448769bcd679c739bc

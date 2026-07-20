@@ -1,0 +1,15 @@
+# ROS 2
+/install
+/log
+/cache
+/build
+
+__pycache__/
+
+.clion.source.upload.marker
+
+cmake-build-debug*/
+
+/.name
+/.idea
+.DS_Store

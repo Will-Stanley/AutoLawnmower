@@ -1,0 +1,12 @@
+ublox_f9p:
+  ros__parameters:
+    frame_id: gps
+    child_frame_id: base_link
+    port: /dev/ttyAMA1
+    baudrate: 921600
+    debug: false
+    config:
+      enabled: true
+      measurement_frequency: 5
+    publish:
+      motion_odometry: true

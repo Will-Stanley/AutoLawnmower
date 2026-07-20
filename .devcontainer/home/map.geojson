@@ -1,0 +1,7 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[-43.20005, -22.90003], [-43.19992, -22.90003], [-43.19992, -22.89993], [-43.20005, -22.89993], [-43.20005, -22.90003]]]}, "properties": {"fill": "#00ff00", "id": "0859c0c1-ec2d-4197-96b7-2d12f6cf1cd9", "name": "backyard", "style": {"color": "#00ff00"}, "type": "operation"}},
+        {"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[-43.199952, -22.89998], [-43.199948, -22.89998]]}, "properties": {"id": "3e700520-06b0-a232-3f69-ee3c762c30b3", "name": "dock", "type": "docking_station"}}
+    ]
+}
