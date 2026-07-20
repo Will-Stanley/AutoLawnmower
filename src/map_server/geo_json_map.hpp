@@ -41,6 +41,7 @@ private:
 
   void eventuallyPublishFoxgloveGeoJSON(json data) const;
   rclcpp::Publisher<foxglove_msgs::msg::GeoJSON>::SharedPtr foxglove_geo_json_publisher_;
+  rclcpp::Publisher<geographic_msgs::msg::GeoPoint>::SharedPtr datum_geopoint_publisher_;
 
   std::string path_;
 

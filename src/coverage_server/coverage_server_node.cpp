@@ -119,6 +119,8 @@ void CoverageServerNode::handleAreaCoverageRequest(
   response->coverage_geometry = utils::toMsg(coverage_cells, area_polygon.header.frame_id);
   response->area_id = request->area_id;
 
+  path_pub_->publish(path);
+
   const auto markers = createVisualizationMarkers(swaths, area_polygon.header.frame_id);
   visualization_pub_->publish(markers);
 

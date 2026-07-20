@@ -40,7 +40,9 @@ controller_server:
     # RPP parameters
     FollowPath:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
-      desired_linear_vel: 0.5
+      # Must stay <= velocity_smoother's max_velocity[0] below, or RPP's internal
+      # speed scaling runs at speeds the smoother silently clamps away.
+      desired_linear_vel: 0.26
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
       max_lookahead_dist: 0.9

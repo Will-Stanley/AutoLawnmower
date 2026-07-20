@@ -23,6 +23,9 @@ GeoJSONMap::GeoJSONMap(std::string path, MapServerNode::SharedPtr map_server_nod
   }
 
   initializeGeographicLibTransformer();
+
+  datum_geopoint_publisher_ = node_->create_publisher<geographic_msgs::msg::GeoPoint>(
+    "map/datum", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   publishDatum();
 
   auto topic_name = node_->declare_parameter("foxglove_geojson_topic_name", "map/foxglove_geojson");
@@ -337,10 +340,7 @@ void GeoJSONMap::publishDatum()
   geo_point.latitude = datum_lat_;
   geo_point.longitude = datum_lon_;
 
-  auto datum_geopoint_publisher = node_->create_publisher<geographic_msgs::msg::GeoPoint>(
-    "map/datum", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
-  datum_geopoint_publisher->publish(geo_point);
-  datum_geopoint_publisher.reset();
+  datum_geopoint_publisher_->publish(geo_point);
 
   RCLCPP_INFO(node_->get_logger(), "Datum published");
   RCLCPP_INFO(

@@ -7,6 +7,8 @@
 
 #include <tf2/LinearMath/Quaternion.hpp>
 
+#include <cmath>
+
 #include <nav_msgs/msg/path.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
@@ -176,16 +178,21 @@ inline nav_msgs::msg::Path toMsg(const f2c::types::Swaths & swaths, const std::s
 {
   nav_msgs::msg::Path msg;
   msg.header.frame_id = frame_id;
-
   for (const auto & swath : swaths) {
-    for (size_t j = 0; j < swath.numPoints(); ++j) {
-      const auto & point = swath.getPoint(j);
-      const geometry_msgs::msg::PoseStamped pose =
-        toMsg(point.getX(), point.getY(), point.getAngleFromPoint(), frame_id);
-      msg.poses.push_back(pose);
+    const size_t n = swath.numPoints();
+    for (size_t j = 0; j < n; ++j) {
+      const auto & p = swath.getPoint(j);
+      double yaw = 0.0;
+      if (j + 1 < n) {
+        const auto & q = swath.getPoint(j + 1);
+        yaw = std::atan2(q.getY() - p.getY(), q.getX() - p.getX());
+      } else if (n >= 2) {
+        const auto & q = swath.getPoint(j - 1);
+        yaw = std::atan2(p.getY() - q.getY(), p.getX() - q.getX());
+      }
+      msg.poses.push_back(toMsg(p.getX(), p.getY(), yaw, frame_id));
     }
   }
-
   return msg;
 }
 

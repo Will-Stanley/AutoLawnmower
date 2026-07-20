@@ -10,7 +10,7 @@ namespace open_mower_next::map_recorder::utils
 {
 
 // Check if a polygon is valid (at least 3 points and proper formation)
-bool isValidPolygon(const std::vector<geometry_msgs::msg::Point>& points)
+inline bool isValidPolygon(const std::vector<geometry_msgs::msg::Point>& points)
 {
   if (points.size() < 3)
   {

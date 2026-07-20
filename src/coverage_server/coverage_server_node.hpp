@@ -2,7 +2,6 @@
 
 #include "open_mower_next/msg/map.hpp"
 #include "open_mower_next/srv/area_coverage.hpp"
-#include "open_mower_next/srv/polygon_coverage.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 

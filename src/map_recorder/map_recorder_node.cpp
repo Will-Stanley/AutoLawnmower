@@ -285,7 +285,7 @@ rclcpp_action::GoalResponse MapRecorderNode::handleAreaBoundaryGoal(
     return rclcpp_action::GoalResponse::REJECT;
   }
 
-  if (docking_goal_handle_ || is_recording_area_)
+  if ((docking_goal_handle_ && docking_goal_handle_->is_active()) || is_recording_area_)
   {
     RCLCPP_ERROR(get_logger(), "Another recording is already in progress");
     return rclcpp_action::GoalResponse::REJECT;

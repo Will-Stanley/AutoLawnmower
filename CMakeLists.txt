@@ -23,7 +23,6 @@ find_package(robot_localization REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-find_package(behaviortree_cpp REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(foxglove_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
@@ -44,7 +43,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
         "src/srv/SaveArea.srv"
         "src/srv/SaveDockingStation.srv"
         "src/srv/FindNearestDockingStation.srv"
-        "src/srv/PolygonCoverage.srv"
         "src/srv/AreaCoverage.srv"
         "src/msg/Area.msg"
         "src/msg/Map.msg"
@@ -91,6 +89,9 @@ if (BUILD_TESTING)
     set(ament_cmake_uncrustify_FOUND TRUE)
     set(ament_cmake_xmllint_FOUND TRUE)
     ament_lint_auto_find_test_dependencies()
+
+    find_package(ament_cmake_pytest REQUIRED)
+    ament_add_pytest_test(load_geojson_map src/map_server/test/load_geojson_map.test.py TIMEOUT 60)
 
     if (OPEN_MOWER_NEXT_ENABLE_INTEGRATION_TESTS)
         find_package(ament_cmake_pytest REQUIRED)

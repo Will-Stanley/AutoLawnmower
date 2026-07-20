@@ -52,6 +52,8 @@ private:
   std::string map_file_;
   bool use_gaussian_blur_;
   double robot_radius_;
+  double grid_resolution_;
+  int grid_max_size_;
 
   void configureGaussianBlur();
 

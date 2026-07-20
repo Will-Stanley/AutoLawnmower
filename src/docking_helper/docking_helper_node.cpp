@@ -145,8 +145,16 @@ std::shared_ptr<geometry_msgs::msg::PoseStamped> open_mower_next::docking_helper
   pose_stamped->header = station->pose.header;
   pose_stamped->pose = station->pose.pose;
 
-  geometry_msgs::msg::TransformStamped transform_stamped =
-      tf_buffer_->lookupTransform("base_link", "charging_port", tf2::TimePointZero);
+  geometry_msgs::msg::TransformStamped transform_stamped;
+  try
+  {
+    transform_stamped = tf_buffer_->lookupTransform("base_link", "charging_port", tf2::TimePointZero);
+  }
+  catch (const tf2::TransformException& ex)
+  {
+    RCLCPP_ERROR(get_logger(), "Could not look up base_link -> charging_port transform: %s", ex.what());
+    return nullptr;
+  }
 
   double offset_distance =
       std::sqrt(transform_stamped.transform.translation.x * transform_stamped.transform.translation.x +
@@ -233,13 +241,27 @@ void open_mower_next::docking_helper::DockingHelperNode::executeDockingAction(
 
   std::shared_ptr<uint16_t> current_status = std::make_shared<uint16_t>(ActionT::Feedback::STATUS_NONE);
   std::shared_ptr<uint16_t> current_retries = std::make_shared<uint16_t>(0);
-  std::atomic<bool> docking_active(true);
+  auto docking_active = std::make_shared<std::atomic<bool>>(true);
+  auto goal_rejected = std::make_shared<std::atomic<bool>>(false);
+  auto finished = std::make_shared<std::atomic<bool>>(false);
+  auto nav2_goal_handle_holder =
+      std::make_shared<rclcpp_action::ClientGoalHandle<nav2_msgs::action::DockRobot>::SharedPtr>(nullptr);
+
+  auto dock_pose = dockPose(docking_station);
+  if (!dock_pose)
+  {
+    result->code = ActionT::Result::CODE_UNKNOWN;
+    result->message = "Failed to compute dock pose: transform lookup failed";
+    result->num_retries = 0;
+    goal_handle->abort(result);
+    return;
+  }
 
   auto nav2_goal = nav2_msgs::action::DockRobot::Goal();
   nav2_goal.use_dock_id = false;
   nav2_goal.navigate_to_staging_pose = true;
   nav2_goal.dock_pose.header = docking_station->pose.header;
-  nav2_goal.dock_pose.pose = dockPose(docking_station)->pose;
+  nav2_goal.dock_pose.pose = dock_pose->pose;
 
   if (!dock_client_->wait_for_action_server(std::chrono::seconds(5)))
   {
@@ -264,24 +286,34 @@ void open_mower_next::docking_helper::DockingHelperNode::executeDockingAction(
         *current_retries = feedback->num_retries;
       };
 
-  send_goal_options.goal_response_callback = [this](const auto& goal_handle) {
+  send_goal_options.goal_response_callback = [this, docking_active, goal_rejected,
+                                              nav2_goal_handle_holder](const auto& goal_handle) {
     if (!goal_handle)
     {
       RCLCPP_ERROR(get_logger(), "Docking goal was rejected by server");
+      *goal_rejected = true;
+      *docking_active = false;
     }
     else
     {
       RCLCPP_INFO(get_logger(), "Docking goal accepted by server");
+      *nav2_goal_handle_holder = goal_handle;
     }
   };
 
-  send_goal_options.result_callback = [this, goal_handle, result, &docking_active](const auto& nav_result) {
+  send_goal_options.result_callback = [this, goal_handle, result, docking_active,
+                                       finished](const auto& nav_result) {
+    if (finished->exchange(true))
+    {
+      return;
+    }
+
     auto status = nav_result.result;
     bool success = status->success;
     uint16_t error_code = status->error_code;
     uint16_t num_retries = status->num_retries;
 
-    docking_active = false;
+    *docking_active = false;
 
     result->num_retries = num_retries;
 
@@ -311,8 +343,25 @@ void open_mower_next::docking_helper::DockingHelperNode::executeDockingAction(
   uint16_t last_status = 99;  // Invalid value to ensure first update is sent
   uint16_t last_retries = 0;
 
-  while (docking_active && rclcpp::ok())
+  while (*docking_active && rclcpp::ok())
   {
+    if (goal_handle->is_canceling())
+    {
+      if (!finished->exchange(true))
+      {
+        if (*nav2_goal_handle_holder)
+        {
+          RCLCPP_INFO(get_logger(), "Canceling Nav2 DockRobot goal due to action cancellation");
+          dock_client_->async_cancel_goal(*nav2_goal_handle_holder);
+        }
+
+        result->code = ActionT::Result::CODE_UNKNOWN;
+        result->message = "Docking canceled";
+        goal_handle->canceled(result);
+      }
+      return;
+    }
+
     auto current_time = this->now();
     auto elapsed = current_time - start_time;
     feedback->docking_time.sec = elapsed.seconds();
@@ -346,6 +395,15 @@ void open_mower_next::docking_helper::DockingHelperNode::executeDockingAction(
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+
+  if (*goal_rejected)
+  {
+    result->code = ActionT::Result::CODE_UNKNOWN;
+    result->message = "Docking goal rejected by Nav2";
+    result->num_retries = 0;
+    goal_handle->abort(result);
+    return;
   }
 }
 

@@ -37,6 +37,9 @@ MapServerNode::MapServerNode(const rclcpp::NodeOptions& options) : rclcpp::Node(
   // reach the true operation/navigation boundary.
   robot_radius_ = declare_parameter("grid.robot_radius", 0.48);
 
+  grid_resolution_ = declare_parameter("grid.resolution", 0.1);
+  grid_max_size_ = declare_parameter("grid.max_size", 2000);
+
   publishMap();
 }
 
@@ -319,12 +322,21 @@ nav_msgs::msg::OccupancyGrid MapServerNode::mapToOccupancyGrid(msg::Map map)
   occupancy_grid.info.origin.position.y = minY;
 
   // cell size in meters - get from parameter
-  occupancy_grid.info.resolution = declare_parameter("grid.resolution", 0.1);
+  occupancy_grid.info.resolution = grid_resolution_;
 
   // Limit the max size of the grid to avoid memory issues with large areas
-  const int MAX_GRID_SIZE = declare_parameter("grid.max_size", 2000);
-  int width = std::min(MAX_GRID_SIZE, static_cast<int>((maxX - minX) / occupancy_grid.info.resolution));
-  int height = std::min(MAX_GRID_SIZE, static_cast<int>((maxY - minY) / occupancy_grid.info.resolution));
+  const int MAX_GRID_SIZE = grid_max_size_;
+  int raw_width = static_cast<int>((maxX - minX) / occupancy_grid.info.resolution);
+  int raw_height = static_cast<int>((maxY - minY) / occupancy_grid.info.resolution);
+  int width = std::min(MAX_GRID_SIZE, raw_width);
+  int height = std::min(MAX_GRID_SIZE, raw_height);
+
+  if (raw_width > MAX_GRID_SIZE || raw_height > MAX_GRID_SIZE)
+  {
+    RCLCPP_WARN(get_logger(), "Occupancy grid truncated to max size %d cells (requested %dx%d, truncated by %dx%d)",
+                MAX_GRID_SIZE, raw_width, raw_height, std::max(0, raw_width - MAX_GRID_SIZE),
+                std::max(0, raw_height - MAX_GRID_SIZE));
+  }
 
   // Ensure minimum grid size
   width = std::max(width, 10);

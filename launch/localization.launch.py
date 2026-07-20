@@ -8,6 +8,16 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
+def require_env(name):
+    value = os.getenv(name)
+    if value is None:
+        raise RuntimeError(
+            f"Required environment variable {name} is not set — run: "
+            "set -a; source .devcontainer/default.env; set +a"
+        )
+    return value
+
+
 def generate_launch_description():
     package_path = get_package_share_directory("open_mower_next")
 
@@ -50,10 +60,10 @@ def generate_launch_description():
                         parameters=[
                             {
                                 "use_sim_time": use_sim_time,
-                                "path": os.getenv("OM_MAP_PATH"),
+                                "path": require_env("OM_MAP_PATH"),
                                 "datum": [
-                                    float(os.getenv("OM_DATUM_LAT")),
-                                    float(os.getenv("OM_DATUM_LONG")),
+                                    float(require_env("OM_DATUM_LAT")),
+                                    float(require_env("OM_DATUM_LONG")),
                                 ],
                                 "grid.use_gaussian_blur": True,
                                 # Must match robot_radius in nav2_params.yaml's local/global
@@ -121,8 +131,8 @@ def generate_launch_description():
                     {
                         "use_sim_time": use_sim_time,
                         "datum": [
-                            float(os.getenv("OM_DATUM_LAT")),
-                            float(os.getenv("OM_DATUM_LONG")),
+                            float(require_env("OM_DATUM_LAT")),
+                            float(require_env("OM_DATUM_LONG")),
                             0.0,
                         ],
                     },

@@ -86,6 +86,12 @@ void MissionManagerNode::handleStartService(
 
 void MissionManagerNode::batteryCallback(const sensor_msgs::msg::BatteryState::SharedPtr msg)
 {
+  if (msg->percentage <= 1.0) {
+    RCLCPP_WARN_ONCE(
+      get_logger(),
+      "battery percentage looks 0-1 scale; mission_manager expects 0-100");
+  }
+
   battery_percent_ = msg->percentage;
 }
 
@@ -105,7 +111,13 @@ void MissionManagerNode::tick()
       break;
 
     case MissionState::NAVIGATING_TO_START:
-      break;  // handled by navigate_to_pose result callback
+      if (battery_percent_ <= battery_low_percent_ && !dock_goal_active_) {
+        RCLCPP_WARN(get_logger(), "Battery at %.1f%% - heading to dock", battery_percent_);
+        navigate_client_->async_cancel_all_goals();
+        setState(MissionState::RETURNING_TO_DOCK, "battery low");
+        sendDockGoal();
+      }
+      break;  // otherwise handled by navigate_to_pose result callback
 
     case MissionState::MOWING:
       if (battery_percent_ <= battery_low_percent_ && !dock_goal_active_) {
@@ -228,18 +240,42 @@ std::vector<nav_msgs::msg::Path> MissionManagerNode::splitPathIntoSegments(
     return seg.poses.size() < kMinSegmentPoses || segmentLength(seg) < kMinSegmentLength;
   };
 
+  auto posDist = [](const geometry_msgs::msg::Point & a, const geometry_msgs::msg::Point & b) {
+    double dx = a.x - b.x;
+    double dy = a.y - b.y;
+    return std::sqrt(dx * dx + dy * dy);
+  };
+
   // Merge degenerate segments (too few poses or too short) into the following segment so
   // follow_path's pure-pursuit controller always has a stable forward direction to steer
   // toward - a standalone 1-2 pose segment gives it nothing to orbit toward, not a heading.
+  // If merging would itself re-introduce an intra-segment jump larger than kMaxSegmentJump,
+  // drop the fragment instead of violating that invariant.
   std::vector<nav_msgs::msg::Path> merged;
   for (size_t i = 0; i < segments.size(); ++i) {
     if (isDegenerate(segments[i]) && i + 1 < segments.size()) {
       auto & next = segments[i + 1];
+      double gap = posDist(segments[i].poses.back().pose.position, next.poses.front().pose.position);
+      if (gap > kMaxSegmentJump) {
+        RCLCPP_WARN(
+          rclcpp::get_logger("mission_manager"),
+          "Dropping degenerate segment fragment (%zu poses) - merge gap %.2fm exceeds max %.2fm",
+          segments[i].poses.size(), gap, kMaxSegmentJump);
+        continue;
+      }
       next.poses.insert(next.poses.begin(), segments[i].poses.begin(), segments[i].poses.end());
       continue;
     }
     if (isDegenerate(segments[i]) && i + 1 == segments.size() && !merged.empty()) {
       auto & prev = merged.back();
+      double gap = posDist(prev.poses.back().pose.position, segments[i].poses.front().pose.position);
+      if (gap > kMaxSegmentJump) {
+        RCLCPP_WARN(
+          rclcpp::get_logger("mission_manager"),
+          "Dropping degenerate segment fragment (%zu poses) - merge gap %.2fm exceeds max %.2fm",
+          segments[i].poses.size(), gap, kMaxSegmentJump);
+        continue;
+      }
       prev.poses.insert(prev.poses.end(), segments[i].poses.begin(), segments[i].poses.end());
       continue;
     }
