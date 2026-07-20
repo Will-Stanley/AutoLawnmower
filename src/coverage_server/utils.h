@@ -174,23 +174,36 @@ inline geometry_msgs::msg::PoseStamped toMsg(
   return pose;
 }
 
+// densified so downstream segment-splitting (kMaxSegmentJump) only triggers on true
+// discontinuities, not sparse sampling
 inline nav_msgs::msg::Path toMsg(const f2c::types::Swaths & swaths, const std::string & frame_id)
 {
   nav_msgs::msg::Path msg;
   msg.header.frame_id = frame_id;
   for (const auto & swath : swaths) {
     const size_t n = swath.numPoints();
-    for (size_t j = 0; j < n; ++j) {
+    for (size_t j = 0; j + 1 < n; ++j) {
       const auto & p = swath.getPoint(j);
-      double yaw = 0.0;
-      if (j + 1 < n) {
-        const auto & q = swath.getPoint(j + 1);
-        yaw = std::atan2(q.getY() - p.getY(), q.getX() - p.getX());
-      } else if (n >= 2) {
-        const auto & q = swath.getPoint(j - 1);
-        yaw = std::atan2(p.getY() - q.getY(), p.getX() - q.getX());
+      const auto & q = swath.getPoint(j + 1);
+      double dx = q.getX() - p.getX();
+      double dy = q.getY() - p.getY();
+      double d = std::hypot(dx, dy);
+      double yaw = std::atan2(dy, dx);
+      int steps = std::max(1, static_cast<int>(std::ceil(d / 0.5)));
+      for (int k = 0; k < steps; ++k) {
+        double x = p.getX() + dx * (static_cast<double>(k) / steps);
+        double y = p.getY() + dy * (static_cast<double>(k) / steps);
+        msg.poses.push_back(toMsg(x, y, yaw, frame_id));
       }
-      msg.poses.push_back(toMsg(p.getX(), p.getY(), yaw, frame_id));
+    }
+    if (n >= 2) {
+      const auto & p = swath.getPoint(n - 2);
+      const auto & q = swath.getPoint(n - 1);
+      double yaw = std::atan2(q.getY() - p.getY(), q.getX() - p.getX());
+      msg.poses.push_back(toMsg(q.getX(), q.getY(), yaw, frame_id));
+    } else if (n == 1) {
+      const auto & p = swath.getPoint(0);
+      msg.poses.push_back(toMsg(p.getX(), p.getY(), 0.0, frame_id));
     }
   }
   return msg;

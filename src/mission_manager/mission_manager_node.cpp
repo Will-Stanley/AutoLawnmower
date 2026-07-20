@@ -182,6 +182,19 @@ void MissionManagerNode::requestCoveragePath()
       path_segments_ = splitPathIntoSegments(response->path);
       removeReversalSpikes(path_segments_);
       fixSegmentEndpointOrientations(path_segments_);
+
+      size_t retained_poses = 0;
+      for (const auto & segment : path_segments_) {
+        retained_poses += segment.poses.size();
+      }
+      if (retained_poses < response->path.poses.size() / 2) {
+        RCLCPP_ERROR(
+          get_logger(), "Coverage path collapsed during segmentation (%zu poses received, %zu retained)",
+          response->path.poses.size(), retained_poses);
+        setState(MissionState::ERROR, "coverage path collapsed during segmentation");
+        return;
+      }
+
       current_segment_index_ = 0;
       pending_path_ = path_segments_[current_segment_index_];
       navigate_retry_count_ = 0;
