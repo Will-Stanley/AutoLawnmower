@@ -24,7 +24,7 @@ diff_drive_base_controller:
     wheels_per_side: 1
 
     use_stamped_vel: true
-    cmd_vel_timeout: 2.0   # sim-environment compensation, see Notion
+    cmd_vel_timeout: 2.0 # was implicit default 0.5s - too tight given uneven sim RTF on this GPU-less container
 
 mower_controller:
   ros__parameters:
