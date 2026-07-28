@@ -1,0 +1,8 @@
+# git submodule status FAILED: fatal: no submodule mapping found in .gitmodules for path 'src/lib/fields2cover'
+# .gitmodules is missing/empty in this stale /opt/ws clone despite 5 gitlink entries in the index.
+# Falling back to 'git ls-files -s src/lib' for the record:
+160000 0ce7fcce82f3f79f773699448769bcd679c739bc 0	src/lib/fields2cover
+160000 af007872b034d1ed31de4815377031350ab0034b 0	src/lib/micro_ros_agent
+160000 ad5c1f0138792d8ba630d91129396063ea918191 0	src/lib/ntrip_client
+160000 7ed7ee3d5eda7f55325d54f3b3c5dc831d6a7285 0	src/lib/ublox_f9p
+160000 abc8c1f6f6405d2ac631376b717316fde1c5f9be 0	src/lib/vesc
