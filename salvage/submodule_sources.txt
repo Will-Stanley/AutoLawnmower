@@ -1,0 +1,39 @@
+Submodule sources captured from /opt/ws/src/lib/ before deletion of the stale
+/opt/ws clone during repo consolidation (see salvage/old-workspace branch).
+
+NOTE: the parent repo's index (gitlink) recorded a DIFFERENT commit than what
+was actually checked out on disk for 3 of the 5 submodules (micro_ros_agent,
+ublox_f9p, vesc show as "M" in `git status` on the stale /opt/ws clone,
+uncommitted). Both are listed below — "checked out" is what was actually on
+disk and almost certainly the one worth keeping for hardware work, since it's
+newer/more-advanced than the stale index pointer.
+
+== fields2cover
+remote: https://github.com/Fields2Cover/Fields2Cover.git
+index (recorded) commit: 0ce7fcce82f3f79f773699448769bcd679c739bc
+checked-out (actual)    commit: 0ce7fcce82f3f79f773699448769bcd679c739bc  (match, clean)
+describe --tags --always: 0ce7fcc
+
+== micro_ros_agent
+remote: https://github.com/micro-ROS/micro-ROS-Agent
+index (recorded) commit: af007872b034d1ed31de4815377031350ab0034b
+checked-out (actual)    commit: 52abdf5a9897637b2539cb1c239e1ec4fa92e01c  (MISMATCH - uncommitted advance)
+describe --tags --always: 5.0.3
+
+== ntrip_client
+remote: https://github.com/LORD-MicroStrain/ntrip_client
+index (recorded) commit: ad5c1f0138792d8ba630d91129396063ea918191
+checked-out (actual)    commit: ad5c1f0138792d8ba630d91129396063ea918191  (match, clean)
+describe --tags --always: ros2-1.4.1
+
+== ublox_f9p
+remote: https://github.com/jkaflik/ublox_f9p
+index (recorded) commit: 7ed7ee3d5eda7f55325d54f3b3c5dc831d6a7285
+checked-out (actual)    commit: 71fc90c703be08a591292b68cb1ce18b6d64edf7  (MISMATCH - uncommitted advance)
+describe --tags --always: 71fc90c
+
+== vesc
+remote: https://github.com/sbgisen/vesc.git
+index (recorded) commit: abc8c1f6f6405d2ac631376b717316fde1c5f9be
+checked-out (actual)    commit: 494f60622bf0a6a1ae94a0dd4277043eb11d6057  (MISMATCH - uncommitted advance)
+describe --tags --always: 494f606
